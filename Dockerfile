@@ -53,5 +53,6 @@ ENV NODE_PATH=./apps/backend/dist
 # Expose the application port
 EXPOSE 5001
 
-# Preload tsconfig-paths to resolve path aliases, then start the server.
-CMD [ "node", "-r", "tsconfig-paths/register", "apps/backend/dist/index.js" ] 
+# Run database migrations and then start the server.
+# This ensures the database is always in sync with the application code.
+CMD ["sh", "-c", "npx prisma migrate deploy && node -r tsconfig-paths/register apps/backend/dist/index.js"] 
