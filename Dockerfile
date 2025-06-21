@@ -28,6 +28,9 @@ RUN npm prune --omit=dev
 # Stage 2: Production
 FROM node:18-slim
 
+# Install OpenSSL, which is required by Prisma
+RUN apt-get update -y && apt-get install -y openssl
+
 # Set working directory
 WORKDIR /app
 
@@ -58,4 +61,5 @@ EXPOSE 5001
 
 # Run database migrations and then start the server.
 # This ensures the database is always in sync with the application code.
-CMD ["sh", "-c", "npx prisma migrate deploy && node -r tsconfig-paths/register apps/backend/dist/index.js"] 
+# We 'cd' into the backend directory so tsconfig-paths can find the tsconfig.json
+CMD ["sh", "-c", "npx prisma migrate deploy && cd apps/backend && node -r tsconfig-paths/register dist/index.js"] 
