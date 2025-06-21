@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { Product, User } from '@poultry-marketplace/shared/types';
 import { 
   Users, 
   Package, 
@@ -21,36 +22,6 @@ interface DashboardStats {
   totalProducts: number;
   totalOrders: number;
   totalRevenue: number;
-}
-
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  isActive: boolean;
-  isVerified: boolean;
-  createdAt: string;
-  _count: {
-    products: number;
-    buyerOrders: number;
-  };
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-  isActive: boolean;
-  createdAt: string;
-  seller: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
 }
 
 export default function AdminDashboard() {

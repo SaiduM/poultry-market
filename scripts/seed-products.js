@@ -19,10 +19,10 @@ const sampleProducts = [
     name: 'Brown Laying Hens',
     description: 'Healthy brown laying hens, 6-12 months old, excellent egg production. Great for backyard farming.',
     category: 'HEN',
-    subcategory: 'LAYER',
+    subcategory: 'PULLET',
     price: 800.00,
     quantity: 12,
-    unit: 'PIECE',
+    unit: 'PER_UNIT',
     images: ['/images/hens-1.jpg'],
     isActive: true,
     isFeatured: true
@@ -31,10 +31,10 @@ const sampleProducts = [
     name: 'White Leghorn Hens',
     description: 'Pure white leghorn hens, known for high egg production. Perfect for commercial egg farming.',
     category: 'HEN',
-    subcategory: 'LAYER',
+    subcategory: 'PULLET',
     price: 850.00,
     quantity: 8,
-    unit: 'PIECE',
+    unit: 'PER_UNIT',
     images: ['/images/hens-2.jpg'],
     isActive: true,
     isFeatured: false
@@ -55,37 +55,25 @@ const sampleProducts = [
     name: 'Rhode Island Red Hens',
     description: 'Dual-purpose hens, great for both eggs and meat. Hardy and productive breed.',
     category: 'HEN',
-    subcategory: 'LAYER',
+    subcategory: 'SPENT_HEN',
     price: 900.00,
     quantity: 15,
-    unit: 'PIECE',
+    unit: 'PER_UNIT',
     images: ['/images/hens-3.jpg'],
     isActive: true,
     isFeatured: true
   },
   {
-    name: 'Organic Eggs',
-    description: 'Certified organic eggs from pasture-raised hens. No antibiotics or hormones.',
+    name: 'Hatching Eggs',
+    description: 'A clutch of 12 high-quality fertilized eggs, ready for incubation. High hatch rate.',
     category: 'EGG',
-    subcategory: 'TABLE_EGG',
-    price: 250.00,
-    quantity: 25,
-    unit: 'DOZEN',
-    images: ['/images/eggs-3.jpg'],
-    isActive: true,
-    isFeatured: true
-  },
-  {
-    name: 'Duck Eggs',
-    description: 'Fresh duck eggs, larger than chicken eggs with rich flavor. Great for baking.',
-    category: 'EGG',
-    subcategory: 'TABLE_EGG',
-    price: 300.00,
+    subcategory: 'HATCHING_EGG',
+    price: 500,
     quantity: 20,
     unit: 'DOZEN',
-    images: ['/images/duck-eggs.jpg'],
+    images: ['/images/fertilized-eggs-1.jpg'],
     isActive: true,
-    isFeatured: false
+    isFeatured: true
   },
   {
     name: 'Baby Chicks',
@@ -94,7 +82,7 @@ const sampleProducts = [
     subcategory: 'BROILER',
     price: 120.00,
     quantity: 100,
-    unit: 'PIECE',
+    unit: 'PER_UNIT',
     images: ['/images/chicks.jpg'],
     isActive: true,
     isFeatured: false
@@ -106,22 +94,30 @@ const sampleProducts = [
     subcategory: 'BROILER',
     price: 450.00,
     quantity: 25,
-    unit: 'PIECE',
+    unit: 'PER_UNIT',
     images: ['/images/broilers.jpg'],
     isActive: true,
     isFeatured: false
   },
   {
-    name: 'Quail Eggs',
-    description: 'Delicate quail eggs, perfect for appetizers and gourmet dishes.',
-    category: 'EGG',
-    subcategory: 'TABLE_EGG',
-    price: 350.00,
-    quantity: 40,
-    unit: 'DOZEN',
-    images: ['/images/quail-eggs.jpg'],
-    isActive: true,
-    isFeatured: false
+    name: 'Nutrient-Rich Manure',
+    description: 'High-quality poultry manure, excellent for enriching garden soil.',
+    category: 'OTHER',
+    subcategory: 'MANURE',
+    price: 1500,
+    quantity: 30,
+    unit: 'PER_KG',
+    images: ['/images/feed-1.jpg']
+  },
+  {
+    name: 'Durable Poultry Feeder',
+    description: 'Durable and efficient poultry feeder, holds up to 10kg of feed.',
+    category: 'OTHER',
+    subcategory: 'EQUIPMENT',
+    price: 2500,
+    quantity: 15,
+    unit: 'PER_UNIT',
+    images: ['/images/feeder-1.jpg']
   }
 ];
 

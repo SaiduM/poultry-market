@@ -6,26 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/context/CartContext';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  subcategory: string;
-  images: string[];
-  quantity: number;
-  unit: string;
-  seller?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+import { Product } from '@poultry-marketplace/shared/types';
 
 const categories = [
   { id: 'all', name: 'All Products' },

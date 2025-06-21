@@ -244,7 +244,7 @@ enum ProductUnit {
   PER_UNIT
   PER_KG
   PER_LB
-  PER_DOZEN
+  DOZEN
 }
 
 enum OrderStatus {

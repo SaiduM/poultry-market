@@ -15,8 +15,8 @@ export const UserSchema = z.object({
   role: UserRoleSchema,
   isVerified: z.boolean(),
   isActive: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -49,8 +49,8 @@ export const ProductSchema = z.object({
   images: z.array(z.string()),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type Product = z.infer<typeof ProductSchema>;
@@ -69,14 +69,14 @@ export const AuctionSchema = z.object({
   currentPrice: z.number().positive(),
   reservePrice: z.number().positive().optional(),
   minBidIncrement: z.number().positive(),
-  startTime: z.date(),
-  endTime: z.date(),
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime(),
   status: AuctionStatusSchema,
   winnerId: z.string().optional(),
   totalBids: z.number().int().min(0),
   views: z.number().int().min(0),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type Auction = z.infer<typeof AuctionSchema>;
@@ -109,8 +109,8 @@ export const OrderSchema = z.object({
   shipping: z.number().min(0),
   total: z.number().positive(),
   notes: z.string().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type Order = z.infer<typeof OrderSchema>;

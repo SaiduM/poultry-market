@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Product, Order } from '@poultry-marketplace/shared/types';
 import { 
   Package, 
   ShoppingCart, 
@@ -15,29 +16,6 @@ import {
   User,
   Settings
 } from 'lucide-react';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  total: number;
-  createdAt: string;
-  buyer?: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
 
 export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
