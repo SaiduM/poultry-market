@@ -46,8 +46,12 @@ COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
 # Copy prisma schema for runtime
 COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/database/prisma/
 
+# Set the node path to the compiled output directory
+# This allows aliased paths (like @/...) to be resolved at runtime.
+ENV NODE_PATH=./apps/backend/dist
+
 # Expose the application port
 EXPOSE 5001
 
-# Define the startup command directly, bypassing the npm workspace command which was causing issues.
-CMD [ "node", "apps/backend/dist/index.js" ] 
+# Preload tsconfig-paths to resolve path aliases, then start the server.
+CMD [ "node", "-r", "tsconfig-paths/register", "apps/backend/dist/index.js" ] 
