@@ -1,0 +1,341 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  role          UserRole  @default(BUYER)
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Authentication
+  password      String?
+  firebaseUid   String?   @unique
+  refreshToken  String?
+
+  // Address
+  addresses     Address[]
+
+  // Products (if seller)
+  products      Product[]
+
+  // Auctions
+  auctionsAsSeller Auction[] @relation("AuctionSeller")
+  auctionsAsWinner Auction[] @relation("AuctionWinner")
+
+  // Bids (if buyer)
+  bids          Bid[]
+
+  // Orders
+  buyerOrders   Order[]   @relation("BuyerOrders")
+  sellerOrders  Order[]   @relation("SellerOrders")
+
+  // Reviews
+  givenReviews  Review[]  @relation("ReviewGiver")
+  receivedReviews Review[] @relation("ReviewReceiver")
+
+  // Notifications
+  notifications Notification[]
+
+  // Payment methods
+  paymentMethods PaymentMethod[]
+
+  @@map("users")
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  type        AddressType
+  street      String
+  city        String
+  state       String
+  zipCode     String
+  country     String   @default("US")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@map("addresses")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  sellerId    String
+  name        String
+  description String
+  category    ProductCategory
+  subcategory ProductSubcategory
+  price       Decimal       @db.Decimal(10, 2)
+  quantity    Int
+  unit        ProductUnit
+  images      String[]
+  isActive    Boolean       @default(true)
+  isFeatured  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  seller      User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  auctions    Auction[]
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+model Auction {
+  id              String        @id @default(cuid())
+  productId       String
+  sellerId        String
+  title           String
+  description     String
+  startingPrice   Decimal       @db.Decimal(10, 2)
+  currentPrice    Decimal       @db.Decimal(10, 2)
+  reservePrice    Decimal?      @db.Decimal(10, 2)
+  minBidIncrement Decimal       @db.Decimal(10, 2) @default(1.00)
+  startTime       DateTime
+  endTime         DateTime
+  status          AuctionStatus @default(SCHEDULED)
+  winnerId        String?
+  totalBids       Int           @default(0)
+  views           Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  seller          User          @relation("AuctionSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  winner          User?         @relation("AuctionWinner", fields: [winnerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bids            Bid[]
+  order           Order?
+
+  @@map("auctions")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  auctionId String
+  bidderId  String
+  amount    Decimal  @db.Decimal(10, 2)
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder    User     @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@map("bids")
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  buyerId       String
+  sellerId      String
+  auctionId     String?       @unique
+  orderNumber   String        @unique
+  status        OrderStatus   @default(PENDING)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  tax           Decimal       @db.Decimal(10, 2) @default(0)
+  shipping      Decimal       @db.Decimal(10, 2) @default(0)
+  total         Decimal       @db.Decimal(10, 2)
+  notes         String?
+  shippingAddressId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  buyer         User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller        User          @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  auction       Auction?      @relation(fields: [auctionId], references: [id])
+  items         OrderItem[]
+  payments      Payment[]
+  shippingAddress Address?    @relation(fields: [shippingAddressId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  reviews       Review[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  // Relations
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+  method        PaymentMethodType
+  status        PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model PaymentMethod {
+  id            String   @id @default(cuid())
+  userId        String
+  type          PaymentMethodType
+  last4         String?
+  brand         String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+  giverId     String
+  receiverId  String
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  giver       User     @relation("ReviewGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("ReviewReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  SELLER
+  BUYER
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum ProductCategory {
+  CHICKEN
+  HEN
+  EGG
+  OTHER
+}
+
+enum ProductSubcategory {
+  // Chicken subcategories
+  BROILER
+  LAYER
+  ROASTER
+  FRYER
+  // Hen subcategories
+  PULLET
+  SPENT_HEN
+  // Egg subcategories
+  TABLE_EGG
+  HATCHING_EGG
+  // Other subcategories
+  MANURE
+  FEATHERS
+  EQUIPMENT
+}
+
+enum ProductUnit {
+  KG
+  DOZEN
+  TRAY
+  PIECE
+  TON
+}
+
+enum AuctionStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethodType {
+  CARD
+  BANK_TRANSFER
+  WALLET
+}
+
+enum NotificationType {
+  NEW_BID
+  AUCTION_ENDING
+  AUCTION_WON
+  ORDER_PLACED
+  ORDER_STATUS_UPDATE
+  NEW_REVIEW
+  PROMOTION
+} 
