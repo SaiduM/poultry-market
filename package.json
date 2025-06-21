@@ -11,9 +11,9 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "npm run dev --workspace=apps/backend",
-    "build": "npm run build --workspaces",
-    "build:frontend": "npm run build --workspace=apps/frontend",
-    "build:backend": "npm run build --workspace=apps/backend",
+    "build": "turbo run build",
+    "build:frontend": "turbo run build --filter=@poultry-marketplace/frontend",
+    "build:backend": "turbo run build --filter=@poultry-marketplace/backend",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
     "start:frontend": "npm run start --workspace=apps/frontend",
     "start:backend": "npm run start --workspace=apps/backend",
@@ -31,13 +31,14 @@
     "schema": "packages/database/prisma/schema.prisma"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "typescript": "^5.3.3",
     "@types/node": "^20.10.5",
-    "prettier": "^3.1.1",
-    "eslint": "^8.56.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
-    "@typescript-eslint/parser": "^6.15.0"
+    "@typescript-eslint/parser": "^6.15.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "turbo": "^2.0.4",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -54,4 +55,4 @@
   ],
   "author": "Your Name",
   "license": "MIT"
-} 
+}
