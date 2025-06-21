@@ -6,7 +6,7 @@ services:
     region: oregon # Based on your previous screenshot
     # The following settings are crucial for a monorepo
     dockerContext: .
-    dockerfilePath: ./apps/backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
         fromDatabase:
