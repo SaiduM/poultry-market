@@ -43,6 +43,9 @@ COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 # Copy the backend's package.json
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
 
+# Copy the backend's tsconfig.json so tsconfig-paths can resolve aliases. THIS IS THE KEY FIX.
+COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/
+
 # Copy prisma schema for runtime
 COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/database/prisma/
 
