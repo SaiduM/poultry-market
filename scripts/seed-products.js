@@ -8,7 +8,7 @@ const sampleProducts = [
     description: 'Organic free-range eggs from healthy hens, collected daily. Perfect for cooking and baking.',
     category: 'EGG',
     subcategory: 'TABLE_EGG',
-    price: 4.99,
+    price: 150.00,
     quantity: 50,
     unit: 'DOZEN',
     images: ['/images/eggs-1.jpg'],
@@ -20,7 +20,7 @@ const sampleProducts = [
     description: 'Healthy brown laying hens, 6-12 months old, excellent egg production. Great for backyard farming.',
     category: 'HEN',
     subcategory: 'LAYER',
-    price: 25.00,
+    price: 800.00,
     quantity: 12,
     unit: 'PIECE',
     images: ['/images/hens-1.jpg'],
@@ -32,7 +32,7 @@ const sampleProducts = [
     description: 'Pure white leghorn hens, known for high egg production. Perfect for commercial egg farming.',
     category: 'HEN',
     subcategory: 'LAYER',
-    price: 28.00,
+    price: 850.00,
     quantity: 8,
     unit: 'PIECE',
     images: ['/images/hens-2.jpg'],
@@ -44,7 +44,7 @@ const sampleProducts = [
     description: 'Large jumbo eggs, perfect for baking and cooking. Extra large size for better value.',
     category: 'EGG',
     subcategory: 'TABLE_EGG',
-    price: 5.99,
+    price: 180.00,
     quantity: 30,
     unit: 'DOZEN',
     images: ['/images/eggs-2.jpg'],
@@ -56,7 +56,7 @@ const sampleProducts = [
     description: 'Dual-purpose hens, great for both eggs and meat. Hardy and productive breed.',
     category: 'HEN',
     subcategory: 'LAYER',
-    price: 30.00,
+    price: 900.00,
     quantity: 15,
     unit: 'PIECE',
     images: ['/images/hens-3.jpg'],
@@ -68,7 +68,7 @@ const sampleProducts = [
     description: 'Certified organic eggs from pasture-raised hens. No antibiotics or hormones.',
     category: 'EGG',
     subcategory: 'TABLE_EGG',
-    price: 7.99,
+    price: 250.00,
     quantity: 25,
     unit: 'DOZEN',
     images: ['/images/eggs-3.jpg'],
@@ -80,7 +80,7 @@ const sampleProducts = [
     description: 'Fresh duck eggs, larger than chicken eggs with rich flavor. Great for baking.',
     category: 'EGG',
     subcategory: 'TABLE_EGG',
-    price: 8.99,
+    price: 300.00,
     quantity: 20,
     unit: 'DOZEN',
     images: ['/images/duck-eggs.jpg'],
@@ -92,7 +92,7 @@ const sampleProducts = [
     description: 'Day-old baby chicks, various breeds available. Perfect for starting your flock.',
     category: 'CHICKEN',
     subcategory: 'BROILER',
-    price: 3.50,
+    price: 120.00,
     quantity: 100,
     unit: 'PIECE',
     images: ['/images/chicks.jpg'],
@@ -104,7 +104,7 @@ const sampleProducts = [
     description: 'Fast-growing broiler chickens, ready for processing. Raised without antibiotics.',
     category: 'CHICKEN',
     subcategory: 'BROILER',
-    price: 15.00,
+    price: 450.00,
     quantity: 25,
     unit: 'PIECE',
     images: ['/images/broilers.jpg'],
@@ -116,7 +116,7 @@ const sampleProducts = [
     description: 'Delicate quail eggs, perfect for appetizers and gourmet dishes.',
     category: 'EGG',
     subcategory: 'TABLE_EGG',
-    price: 12.99,
+    price: 350.00,
     quantity: 40,
     unit: 'DOZEN',
     images: ['/images/quail-eggs.jpg'],
@@ -170,7 +170,7 @@ async function seedProducts() {
     console.log(`✅ Successfully seeded ${createdProducts.length} products`);
     console.log('📦 Sample products created:');
     createdProducts.forEach(product => {
-      console.log(`  - ${product.name} ($${product.price})`);
+      console.log(`  - ${product.name} (₹${product.price})`);
     });
 
   } catch (error) {

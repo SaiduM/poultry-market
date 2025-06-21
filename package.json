@@ -27,6 +27,9 @@
     "test": "npm run test --workspaces",
     "clean": "npm run clean --workspaces && rm -rf node_modules"
   },
+  "prisma": {
+    "schema": "packages/database/prisma/schema.prisma"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "typescript": "^5.3.3",

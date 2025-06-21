@@ -1,55 +1,115 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { 
-  User as UserIcon, 
-  ShoppingCart, 
-  Package, 
-  Heart, 
-  Settings, 
-  LogOut,
-  Plus,
-  Eye
-} from 'lucide-react';
 import Link from 'next/link';
+import { 
+  Package, 
+  ShoppingCart, 
+  DollarSign, 
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  User,
+  Settings
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  category: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  buyer?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export default function Dashboard() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        router.push('/auth/login');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
+    if (!authLoading && !user) {
       router.push('/auth/login');
+      return;
+    }
+
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user, authLoading, router]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      if (user?.role === 'SELLER' || user?.role === 'ADMIN') {
+        // Fetch seller's products
+        const productsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/products?sellerId=${user.id}`);
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          setProducts(productsData.products || []);
+        }
+      }
+
+      if (user?.role === 'SELLER') {
+        // Fetch seller's orders
+        const ordersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/orders?sellerId=${user.id}`);
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          setOrders(ordersData.orders || []);
+        }
+      }
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await user?.getIdToken()}`
+        }
+      });
+
+      if (response.ok) {
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -58,154 +118,350 @@ export default function DashboardPage() {
     return null;
   }
 
-  const stats = [
-    { name: 'Orders', value: '12', icon: ShoppingCart, color: 'bg-blue-500' },
-    { name: 'Wishlist', value: '8', icon: Heart, color: 'bg-red-500' },
-    { name: 'Products', value: '24', icon: Package, color: 'bg-green-500' },
-  ];
-
-  const quickActions = [
-    {
-      name: 'Browse Products',
-      description: 'View all available poultry products',
-      icon: Eye,
-      href: '/products',
-      color: 'bg-indigo-500'
-    },
-    {
-      name: 'Sell Products',
-      description: 'List your poultry products for sale',
-      icon: Plus,
-      href: '/sell',
-      color: 'bg-green-500'
-    },
-    {
-      name: 'My Orders',
-      description: 'View your order history',
-      icon: ShoppingCart,
-      href: '/orders',
-      color: 'bg-blue-500'
-    },
-    {
-      name: 'Account Settings',
-      description: 'Manage your account preferences',
-      icon: Settings,
-      href: '/settings',
-      color: 'bg-gray-500'
-    }
-  ];
+  // Redirect admin users to admin dashboard
+  if (user.role === 'ADMIN') {
+    router.push('/admin');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Welcome back, {user.displayName || user.email}
-              </p>
-            </div>
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-500">Welcome, {user.firstName} {user.lastName}</span>
               <Link
-                href="/products"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                href="/auth/logout"
+                className="text-sm text-gray-500 hover:text-gray-700"
               >
-                Browse Products
+                Logout
               </Link>
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat) => (
-            <div key={stat.name} className="bg-white rounded-lg shadow-sm border p-6">
-              <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${stat.color}`}>
-                  <stat.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* User Role Badge */}
+        <div className="mb-8">
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            user.role === 'SELLER' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+          }`}>
+            {user.role === 'SELLER' ? 'Seller' : 'Buyer'}
+          </span>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <Link
-                key={action.name}
-                href={action.href}
-                className="block p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all"
+        {/* Navigation Tabs */}
+        <div className="border-b border-gray-200 mb-8">
+          <nav className="-mb-px flex space-x-8">
+            {[
+              { id: 'overview', name: 'Overview', icon: Eye },
+              ...(user.role === 'SELLER' ? [
+                { id: 'products', name: 'My Products', icon: Package },
+                { id: 'orders', name: 'Orders', icon: ShoppingCart }
+              ] : [
+                { id: 'orders', name: 'My Orders', icon: ShoppingCart }
+              ]),
+              { id: 'profile', name: 'Profile', icon: User }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
-                <div className="flex items-center">
-                  <div className={`p-2 rounded-lg ${action.color}`}>
-                    <action.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-gray-900">{action.name}</h3>
-                    <p className="text-xs text-gray-500">{action.description}</p>
-                  </div>
-                </div>
-              </Link>
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.name}</span>
+              </button>
             ))}
-          </div>
+          </nav>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <ShoppingCart className="h-4 w-4 text-green-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Order #12345 placed</p>
-                <p className="text-xs text-gray-500">Fresh Farm Eggs - 2 dozen</p>
-              </div>
-              <span className="ml-auto text-xs text-gray-500">2 hours ago</span>
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {user.role === 'SELLER' && (
+                <>
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div className="ml-5 w-0 flex-1">
+                          <dl>
+                            <dt className="text-sm font-medium text-gray-500 truncate">Total Products</dt>
+                            <dd className="text-lg font-medium text-gray-900">{products.length}</dd>
+                          </dl>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <ShoppingCart className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div className="ml-5 w-0 flex-1">
+                          <dl>
+                            <dt className="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
+                            <dd className="text-lg font-medium text-gray-900">{orders.length}</dd>
+                          </dl>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white overflow-hidden shadow rounded-lg">
+                    <div className="p-5">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <DollarSign className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div className="ml-5 w-0 flex-1">
+                          <dl>
+                            <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                            <dd className="text-lg font-medium text-gray-900">
+                              ${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
+                            </dd>
+                          </dl>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {user.role === 'BUYER' && (
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <ShoppingCart className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">My Orders</dt>
+                          <dd className="text-lg font-medium text-gray-900">{orders.length}</dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Heart className="h-4 w-4 text-blue-600" />
+
+            {/* Quick Actions */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Link
+                  href="/products"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  <Package className="h-5 w-5 text-indigo-600 mr-3" />
+                  <span className="text-sm font-medium text-gray-900">Browse Products</span>
+                </Link>
+
+                {user.role === 'SELLER' && (
+                  <Link
+                    href="/products/add"
+                    className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    <Plus className="h-5 w-5 text-green-600 mr-3" />
+                    <span className="text-sm font-medium text-gray-900">Add New Product</span>
+                  </Link>
+                )}
+
+                <Link
+                  href="/profile"
+                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  <Settings className="h-5 w-5 text-gray-600 mr-3" />
+                  <span className="text-sm font-medium text-gray-900">Edit Profile</span>
+                </Link>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Added to wishlist</p>
-                <p className="text-xs text-gray-500">Brown Laying Hens</p>
-              </div>
-              <span className="ml-auto text-xs text-gray-500">1 day ago</span>
-            </div>
-            
-            <div className="flex items-center p-4 bg-gray-50 rounded-lg">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <UserIcon className="h-4 w-4 text-purple-600" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Profile updated</p>
-                <p className="text-xs text-gray-500">Phone number added</p>
-              </div>
-              <span className="ml-auto text-xs text-gray-500">3 days ago</span>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Products Tab (Seller Only) */}
+        {activeTab === 'products' && user.role === 'SELLER' && (
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">My Products</h3>
+              <Link
+                href="/products/add"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Link>
+            </div>
+            {products.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <Package className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No products</h3>
+                <p className="mt-1 text-sm text-gray-500">Get started by adding your first product.</p>
+                <div className="mt-6">
+                  <Link
+                    href="/products/add"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {products.map((product) => (
+                  <li key={product.id} className="px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                            <Package className="h-5 w-5 text-gray-600" />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-500">
+                            ${product.price} • {product.quantity} in stock • {product.category}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <Link
+                          href={`/products/${product.id}/edit`}
+                          className="p-1 text-gray-400 hover:text-gray-600"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <div className="px-4 py-5 sm:px-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                {user.role === 'SELLER' ? 'Orders Received' : 'My Orders'}
+              </h3>
+            </div>
+            {orders.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {user.role === 'SELLER' 
+                    ? 'You haven\'t received any orders yet.' 
+                    : 'You haven\'t placed any orders yet.'
+                  }
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <li key={order.id} className="px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                            <ShoppingCart className="h-5 w-5 text-gray-600" />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">Order #{order.orderNumber}</div>
+                          <div className="text-sm text-gray-500">
+                            ${order.total} • {order.status} • {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
+                          {user.role === 'SELLER' && order.buyer && (
+                            <div className="text-sm text-gray-500">
+                              Buyer: {order.buyer.firstName} {order.buyer.lastName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {order.status}
+                        </span>
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="p-1 text-gray-400 hover:text-gray-600"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="px-4 py-5 sm:px-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
+            </div>
+            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+              <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Full Name</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{user.firstName} {user.lastName}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Email</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Role</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{user.role}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Member Since</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
