@@ -13,8 +13,6 @@ import { errorHandler } from '@/middleware/error-handler';
 import { notFound } from '@/middleware/not-found';
 import authRoutes from '@/routes/auth';
 import productRoutes from '@/routes/products';
-import auctionRoutes from '@/routes/auctions';
-import bidRoutes from '@/routes/bids';
 import userRoutes from '@/routes/users';
 import paymentRoutes from '@/routes/payments';
 import adminRoutes from '@/routes/admin';
@@ -85,8 +83,6 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/auctions', auctionRoutes);
-app.use('/api/bids', bidRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);

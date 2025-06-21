@@ -1,249 +1,116 @@
-# Poultry Marketplace Setup Guide
+# Poultry Marketplace - Setup Guide
 
-This guide will help you set up the complete poultry marketplace with authentication and products functionality.
+This guide provides instructions to set up and run the Poultry Marketplace, a simple e-commerce platform for selling hens and eggs.
 
-## Prerequisites
+## Project Overview
 
-- Node.js 18+ and npm
-- PostgreSQL database
-- Firebase project (for authentication)
+- **Monorepo**: Managed with npm workspaces.
+- **Frontend**: Next.js (in `apps/frontend`) - Deployed on Vercel.
+- **Backend**: Express.js (in `apps/backend`) - Deployed on Render.
+- **Database**: PostgreSQL, managed with Prisma.
 
-## 1. Database Setup
+## 1. Local Setup
 
-### 1.1 Install PostgreSQL
-- Install PostgreSQL on your system
-- Create a new database for the project
+### Prerequisites
+- Node.js (v18 or newer)
+- npm (v9 or newer)
+- A running PostgreSQL instance
 
-### 1.2 Configure Database Connection
-Create a `.env` file in the root directory:
-
-```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/poultry_marketplace"
-
-# JWT Secret
-JWT_SECRET="your-super-secret-jwt-key-here"
-
-# Backend
-PORT=5001
-NODE_ENV=development
-```
-
-### 1.3 Run Database Migrations
+### Step 1: Clone the Repository
 ```bash
-# Generate Prisma client
-npm run db:generate
-
-# Run migrations
-npm run db:migrate
+git clone <your-repository-url>
+cd poultry-marketplace
 ```
 
-## 2. Firebase Setup
-
-### 2.1 Create Firebase Project
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project
-3. Enable Authentication:
-   - Go to Authentication > Sign-in method
-   - Enable Email/Password
-   - Enable Google sign-in
-4. Get your configuration:
-   - Go to Project Settings
-   - Add a web app
-   - Copy the configuration values
-
-### 2.2 Configure Firebase in Frontend
-Create a `.env.local` file in `apps/frontend/`:
-
-```env
-# Firebase Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Backend API URL
-NEXT_PUBLIC_API_URL=http://localhost:5001
-```
-
-## 3. Install Dependencies
-
+### Step 2: Install Dependencies
+This command installs dependencies for the entire monorepo.
 ```bash
-# Install all dependencies
 npm install
 ```
 
-## 4. Seed Sample Data
+### Step 3: Set Up Environment Variables
 
+**A. Backend (`.env`)**
+
+Create a file named `.env` in the root of the project and add the following:
+
+```env
+# 1. Database Connection
+# Replace with your actual PostgreSQL connection string
+DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/poultry_db"
+
+# 2. Server Port (Optional, defaults to 5001)
+PORT=5001
+
+# 3. Environment
+NODE_ENV=development
+
+# 4. Firebase Admin Credentials (Optional, for authentication)
+# Required for user creation and login. Can be left blank for development if
+# you only need to access public product endpoints.
+FIREBASE_PROJECT_ID=
+FIREBASE_PRIVATE_KEY=
+FIREBASE_CLIENT_EMAIL=
+```
+
+**B. Frontend (`apps/frontend/.env.local`)**
+
+Create a file named `.env.local` inside the `apps/frontend` directory:
+
+```env
+# 1. Backend API URL
+# This tells the frontend where the backend is running.
+NEXT_PUBLIC_API_URL=http://localhost:5001
+
+# 2. Firebase Client SDK (Optional, for authentication)
+# Required for the login/signup UI to work.
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+```
+
+### Step 4: Prepare the Database
+These commands will set up your database tables based on the schema and generate the Prisma client.
 ```bash
-# Seed the database with sample products
+# Apply database migrations
+npm run db:migrate
+
+# Generate Prisma client (usually runs with migrate, but good to know)
+npm run db:generate
+```
+
+### Step 5: Seed with Sample Data (Optional)
+To populate the database with sample users and products (hens and eggs), run:
+```bash
 npm run seed:products
 ```
 
-This will create:
-- A sample seller user (email: seller@example.com, password: password123)
-- 10 sample products (eggs and hens)
-
-## 5. Start the Application
-
+### Step 6: Run the Application
+This command starts both the frontend and backend servers concurrently.
 ```bash
-# Start both frontend and backend
 npm run dev
 ```
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend**: [http://localhost:5001](http://localhost:5001)
+- **Backend Health Check**: [http://localhost:5001/health](http://localhost:5001/health)
 
-The application will be available at:
-- Frontend: http://localhost:3001
-- Backend API: http://localhost:5001
+---
 
-## 6. Available Features
+## 2. Deployment
 
-### Authentication
-- **Login Page**: `/auth/login`
-  - Email/password authentication
-  - Google authentication
-  - Forgot password link
+### Frontend (Vercel)
+1.  Connect your Git repository to a new Vercel project.
+2.  Vercel will automatically detect it as a Next.js application.
+3.  Set the **Root Directory** to `apps/frontend`.
+4.  Add your production environment variables (e.g., `NEXT_PUBLIC_API_URL` pointing to your live Render backend URL).
+5.  Deploy!
 
-- **Signup Page**: `/auth/signup`
-  - User registration with email/password
-  - Google signup
-  - Form validation
+### Backend (Render)
+This project is configured for "Infrastructure as Code" deployment on Render using the `render.yaml` and `Dockerfile` in the repository.
 
-- **Forgot Password**: `/auth/forgot-password`
-  - Password reset via email
-
-### Products
-- **Products Page**: `/products`
-  - Browse all products
-  - Filter by category (Live Poultry, Eggs)
-  - Filter by subcategory (Laying Hens, Chicken Eggs, etc.)
-  - Search functionality
-  - Sort by price, rating, name
-  - Product cards with images, prices, stock status
-
-- **Dashboard**: `/dashboard` (requires authentication)
-  - User statistics
-  - Quick actions
-  - Recent activity
-  - Sign out functionality
-
-### API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/refresh` - Refresh JWT token
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
-- `GET /api/auth/me` - Get current user
-
-#### Products
-- `GET /api/products` - Get all products (with filtering)
-- `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create product (authenticated)
-- `PUT /api/products/:id` - Update product (authenticated)
-- `DELETE /api/products/:id` - Delete product (authenticated)
-- `GET /api/products/categories/list` - Get categories
-
-## 7. Sample Data
-
-The seed script creates the following products:
-
-### Eggs
-- Fresh Farm Eggs ($4.99/dozen)
-- Jumbo Eggs ($5.99/dozen)
-- Organic Eggs ($7.99/dozen)
-- Duck Eggs ($8.99/dozen)
-- Quail Eggs ($12.99/dozen)
-
-### Live Poultry
-- Brown Laying Hens ($25.00/each)
-- White Leghorn Hens ($28.00/each)
-- Rhode Island Red Hens ($30.00/each)
-- Baby Chicks ($3.50/each)
-- Broiler Chickens ($15.00/each)
-
-## 8. Testing the Application
-
-1. **Visit the homepage**: http://localhost:3001
-2. **Browse products**: Click "Browse Products" or go to `/products`
-3. **Test authentication**:
-   - Go to `/auth/signup` to create an account
-   - Or use Google authentication
-   - Login at `/auth/login`
-4. **Access dashboard**: After login, you'll be redirected to `/dashboard`
-
-## 9. Development
-
-### Frontend Structure
-```
-apps/frontend/
-├── app/
-│   ├── auth/
-│   │   ├── login/page.tsx
-│   │   ├── signup/page.tsx
-│   │   └── forgot-password/page.tsx
-│   ├── dashboard/page.tsx
-│   ├── products/page.tsx
-│   └── page.tsx (home)
-├── lib/
-│   └── firebase.ts
-└── components/
-```
-
-### Backend Structure
-```
-apps/backend/
-├── src/
-│   ├── routes/
-│   │   ├── auth.ts
-│   │   └── products.ts
-│   ├── middleware/
-│   │   └── auth.ts
-│   └── index.ts
-```
-
-## 10. Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Error**
-   - Check your DATABASE_URL in `.env`
-   - Ensure PostgreSQL is running
-   - Verify database exists
-
-2. **Firebase Authentication Not Working**
-   - Check Firebase configuration in `.env.local`
-   - Ensure Google sign-in is enabled in Firebase console
-   - Verify domain is authorized
-
-3. **Products Not Loading**
-   - Run the seed script: `npm run seed:products`
-   - Check backend logs for errors
-   - Verify database has data
-
-4. **Port Already in Use**
-   - Change ports in package.json scripts
-   - Kill existing processes on ports 3001/5001
-
-### Logs
-- Frontend logs: Check browser console
-- Backend logs: Check terminal where `npm run dev:backend` is running
-
-## 11. Next Steps
-
-To extend the application, consider adding:
-- Shopping cart functionality
-- Order management
-- Payment integration (Stripe)
-- Real-time bidding system
-- Image upload for products
-- User reviews and ratings
-- Admin panel
-- Email notifications
-
-## Support
-
-If you encounter any issues, check the logs and ensure all prerequisites are properly configured. 
+1.  Go to your Render Dashboard.
+2.  Click **New > Blueprint Instance**.
+3.  Connect the Git repository for this project.
+4.  Render will automatically read the `render.yaml` file and configure the backend service and PostgreSQL database.
+5.  **Important**: You must add your production secrets (like `DATABASE_URL` and Firebase credentials) as environment variables in the Render service settings. The `render.yaml` is configured to use a new database, so Render will provide the `DATABASE_URL` for you.
+6.  Deploy the latest commit. Render will use the provided `Dockerfile` to build and run the backend service. 
