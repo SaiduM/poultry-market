@@ -51,6 +51,12 @@ export const ProductSchema = z.object({
   isFeatured: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  seller: UserSchema.pick({
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+  }).optional(),
 });
 
 export type Product = z.infer<typeof ProductSchema>;
@@ -94,7 +100,7 @@ export const BidSchema = z.object({
 export type Bid = z.infer<typeof BidSchema>;
 
 // Order Types
-export const OrderStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']);
+export const OrderStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'COMPLETED']);
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 
 export const OrderSchema = z.object({
@@ -111,6 +117,18 @@ export const OrderSchema = z.object({
   notes: z.string().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  buyer: UserSchema.pick({
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+  }).optional(),
+  seller: UserSchema.pick({
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+  }).optional(),
 });
 
 export type Order = z.infer<typeof OrderSchema>;

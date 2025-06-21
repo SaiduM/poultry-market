@@ -330,10 +330,10 @@ export default function AdminDashboard() {
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
                         <div className="text-sm text-gray-500">
-                          ${product.price} • {product.quantity} in stock • {product.category}
+                          {product.price.toFixed(2)} / {product.unit}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Seller: {product.seller.firstName} {product.seller.lastName}
+                          Seller: {product.seller ? `${product.seller.firstName} ${product.seller.lastName}` : 'Unknown'}
                         </div>
                       </div>
                     </div>

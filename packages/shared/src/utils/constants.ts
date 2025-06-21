@@ -314,7 +314,10 @@ export const FEATURES = {
 };
 
 // Environment detection with proper type checking
-const isClient = typeof globalThis !== 'undefined' && typeof globalThis.window !== 'undefined';
+export const isServer = typeof window === 'undefined';
+
+// Check if running on the client (browser)
+export const isClient = typeof window !== 'undefined';
 
 // Environment
 export const ENV = {
@@ -322,7 +325,7 @@ export const ENV = {
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
   IS_TEST: process.env.NODE_ENV === 'test',
   IS_CLIENT: isClient,
-  IS_SERVER: !isClient,
+  IS_SERVER: isServer,
 };
 
 // Local storage keys

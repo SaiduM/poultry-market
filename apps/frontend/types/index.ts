@@ -1,5 +1,5 @@
 import { User as FirebaseUser } from 'firebase/auth';
-import { User as BackendUser } from '@poultry-marketplace/shared/types';
+import { User as BackendUser } from '@poultry-marketplace/shared';
 
 // This creates a comprehensive user type that includes
 // all properties from the Firebase user object and all

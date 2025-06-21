@@ -38,11 +38,12 @@ export default function Dashboard() {
   }, [user, authLoading, router]);
 
   const fetchDashboardData = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
       
-      if (user?.role === 'SELLER' || user?.role === 'ADMIN') {
-        // Fetch seller's products
+      if (user.role === 'SELLER' || user.role === 'ADMIN') {
         const productsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/products?sellerId=${user.id}`);
         if (productsRes.ok) {
           const productsData = await productsRes.json();
@@ -50,9 +51,14 @@ export default function Dashboard() {
         }
       }
 
-      if (user?.role === 'SELLER') {
-        // Fetch seller's orders
+      if (user.role === 'SELLER') {
         const ordersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/orders?sellerId=${user.id}`);
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          setOrders(ordersData.orders || []);
+        }
+      } else if (user.role === 'BUYER') {
+        const ordersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/orders?buyerId=${user.id}`);
         if (ordersRes.ok) {
           const ordersData = await ordersRes.json();
           setOrders(ordersData.orders || []);
@@ -319,20 +325,21 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {product.isActive ? 'Active' : 'Inactive'}
                         </span>
-                        <Link
-                          href={`/products/${product.id}/edit`}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
+                        <button className="text-gray-400 hover:text-gray-600">
                           <Edit className="h-4 w-4" />
-                        </Link>
+                        </button>
                         <button
                           onClick={() => handleDeleteProduct(product.id)}
-                          className="p-1 text-gray-400 hover:text-red-600"
+                          className="text-gray-400 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -348,58 +355,51 @@ export default function Dashboard() {
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <div className="px-4 py-5 sm:px-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                {user.role === 'SELLER' ? 'Orders Received' : 'My Orders'}
-              </h3>
-            </div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900 px-4 py-5 sm:px-6">
+              {user.role === 'SELLER' ? 'Orders Received' : 'My Orders'}
+            </h3>
             {orders.length === 0 ? (
-              <div className="px-4 py-8 text-center">
+               <div className="px-4 py-8 text-center">
                 <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
                 <p className="mt-1 text-sm text-gray-500">
                   {user.role === 'SELLER' 
-                    ? 'You haven\'t received any orders yet.' 
-                    : 'You haven\'t placed any orders yet.'
-                  }
+                    ? 'You have not received any orders yet.' 
+                    : 'You have not placed any orders yet.'}
                 </p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
                 {orders.map((order) => (
-                  <li key={order.id} className="px-4 py-4">
+                  <li key={order.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <ShoppingCart className="h-5 w-5 text-gray-600" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">Order #{order.orderNumber}</div>
-                          <div className="text-sm text-gray-500">
-                            ${order.total} • {order.status} • {new Date(order.createdAt).toLocaleDateString()}
-                          </div>
-                          {user.role === 'SELLER' && order.buyer && (
-                            <div className="text-sm text-gray-500">
-                              Buyer: {order.buyer.firstName} {order.buyer.lastName}
-                            </div>
-                          )}
-                        </div>
+                      <div>
+                        <p className="text-sm font-medium text-indigo-600 truncate">
+                          Order #{order.orderNumber}
+                        </p>
+                        <p className="mt-1 flex items-center text-sm text-gray-500">
+                          {user.role === 'SELLER' ? `Buyer: ${order.buyer?.firstName || ''} ${order.buyer?.lastName || ''}` : `Seller: ${order.seller?.firstName || ''} ${order.seller?.lastName || ''}`}
+                        </p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                      <div className="ml-2 flex-shrink-0 flex">
+                        <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           {order.status}
-                        </span>
-                        <Link
-                          href={`/orders/${order.id}`}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
-                          <Eye className="h-4 w-4" />
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:flex sm:justify-between">
+                      <div className="sm:flex">
+                        <p className="flex items-center text-sm text-gray-500">
+                          <DollarSign className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          ${order.total.toFixed(2)}
+                        </p>
+                        <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                           {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <Link href={`/orders/${order.id}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+                          View Details
                         </Link>
                       </div>
                     </div>
@@ -412,35 +412,39 @@ export default function Dashboard() {
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
+          <div className="bg-white shadow sm:rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
-            </div>
-            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Full Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user.firstName} {user.lastName}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Role</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{user.role}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Member Since</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </dd>
-                </div>
-              </dl>
+              <div className="mt-5 border-t border-gray-200">
+                <dl className="sm:divide-y sm:divide-gray-200">
+                  <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">Full name</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.firstName} {user.lastName}</dd>
+                  </div>
+                  <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">Email address</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.email}</dd>
+                  </div>
+                   <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">Phone</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.phone || 'N/A'}</dd>
+                  </div>
+                  <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">Role</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user.role}</dd>
+                  </div>
+                   <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">Member since</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           </div>
         )}
       </div>
     </div>
   );
-} 
+}

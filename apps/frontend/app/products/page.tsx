@@ -157,7 +157,6 @@ export default function ProductsPage() {
       id: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1,
       unit: product.unit,
       image: product.images[0] || '/images/placeholder.jpg'
     });

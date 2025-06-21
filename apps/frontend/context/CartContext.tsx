@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { ProductUnit } from '@poultry-marketplace/shared';
 
 // Define the shape of a single cart item
 interface CartItem {
@@ -9,6 +10,7 @@ interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  unit: ProductUnit;
 }
 
 // Define the shape of the context's value
