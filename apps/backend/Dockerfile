@@ -1,43 +1,46 @@
-# Stage 1: Build the application
-FROM node:18-alpine AS builder
+# Dockerfile for the backend service
+# This file should be built from the root of the monorepo.
 
-# Set the working directory
-WORKDIR /usr/src/app
+# 1. Base image for installing dependencies
+FROM node:18-alpine AS deps
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
+WORKDIR /app
+COPY package.json package-lock.json* ./
 RUN npm install
 
-# Copy the entire backend source code
+# 2. Base image for building the application
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+# Copy dependencies from the 'deps' stage
+COPY --from=deps /app/node_modules ./node_modules
+# Copy all source code
 COPY . .
 
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build the TypeScript code
-RUN npm run build
+# Build the backend workspace
+RUN npm run build --workspace=@poultry-marketplace/backend
 
-# Stage 2: Create the production image
+# 3. Final production image
 FROM node:18-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy package.json and package-lock.json for production dependencies
-COPY package*.json ./
+# Only copy necessary production files from the builder stage
+# This creates a much smaller final image
 
-# Install only production dependencies
-RUN npm install --omit=dev
+# Copy production node_modules
+COPY --from=builder /app/node_modules ./node_modules
+# Copy backend's dist folder
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+# Copy backend's package.json to be able to run npm start
+COPY ./apps/backend/package.json ./apps/backend/package.json
+# Copy prisma schema for runtime
+COPY ./packages/database/prisma ./packages/database/prisma
 
-# Copy the built application from the builder stage
-COPY --from=builder /usr/src/app/dist ./dist
-
-# The Prisma schema is needed for the production client
-COPY prisma ./prisma
-
-# Expose the port the app runs on
 EXPOSE 5000
 
-# The command to run the application
-CMD ["npm", "run", "start"] 
+# The command to start the backend service
+CMD ["npm", "run", "start", "--workspace", "@poultry-marketplace/backend"] 
