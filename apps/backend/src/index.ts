@@ -20,8 +20,10 @@ import { socketHandler } from '@/services/socket-handler';
 import { connectDatabase } from '@/config/database';
 import { logger } from '@/utils/logger';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables only in development
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const app = express();
 const server = createServer(app);
