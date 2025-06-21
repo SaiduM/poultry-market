@@ -1,13 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { firebaseAuth } from '../config/firebase';
-import { AuthRequest as CustomAuthRequest } from '../types';
 
 const prisma = new PrismaClient();
 
-// Define a local AuthRequest that can be exported
+// Define and export the AuthRequest interface directly in this file.
 export interface AuthRequest extends Request {
-  user: CustomAuthRequest['user'];
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    isVerified?: boolean;
+  };
 }
 
 export const authMiddleware = async (
