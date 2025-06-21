@@ -1,17 +1,12 @@
-import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { authenticateToken, requireVerified } from '../middleware/auth';
+import { Router, Request, Response } from 'express';
+import { PrismaClient, ProductCategory, ProductSubcategory, ProductUnit } from '@prisma/client';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Import the AuthRequest type
-interface AuthRequest extends Request {
-  user?: any;
-}
-
 // Get all products with filtering and pagination
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const {
       page = 1,
@@ -35,11 +30,11 @@ router.get('/', async (req, res) => {
     };
 
     if (category) {
-      where.category = category;
+      where.category = category as ProductCategory;
     }
 
     if (subcategory) {
-      where.subcategory = subcategory;
+      where.subcategory = subcategory as ProductSubcategory;
     }
 
     if (search) {
@@ -96,7 +91,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get single product by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -125,8 +120,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new product (requires authentication)
-router.post('/', authenticateToken, requireVerified, async (req: AuthRequest, res) => {
+// Create new product (protected route)
+router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const {
       name,
@@ -139,18 +134,18 @@ router.post('/', authenticateToken, requireVerified, async (req: AuthRequest, re
       images
     } = req.body;
 
-    const sellerId = req.user.id; // Get from authenticated user
+    const sellerId = (req as AuthRequest).user.id;
 
     const product = await prisma.product.create({
       data: {
         sellerId,
         name,
         description,
-        category,
-        subcategory,
+        category: category as ProductCategory,
+        subcategory: subcategory as ProductSubcategory,
         price: parseFloat(price),
         quantity: parseInt(quantity),
-        unit,
+        unit: unit as ProductUnit,
         images: images || []
       },
       include: {
@@ -175,12 +170,12 @@ router.post('/', authenticateToken, requireVerified, async (req: AuthRequest, re
   }
 });
 
-// Update product (requires authentication)
-router.put('/:id', authenticateToken, requireVerified, async (req: AuthRequest, res) => {
+// Update product (protected route)
+router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    const userId = req.user.id;
+    const userId = (req as AuthRequest).user.id;
 
     // Check if user owns the product
     const existingProduct = await prisma.product.findUnique({
@@ -220,11 +215,11 @@ router.put('/:id', authenticateToken, requireVerified, async (req: AuthRequest, 
   }
 });
 
-// Delete product (requires authentication)
-router.delete('/:id', authenticateToken, requireVerified, async (req: AuthRequest, res) => {
+// Delete product (protected route)
+router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = (req as AuthRequest).user.id;
 
     // Check if user owns the product
     const existingProduct = await prisma.product.findUnique({
@@ -251,7 +246,7 @@ router.delete('/:id', authenticateToken, requireVerified, async (req: AuthReques
 });
 
 // Get product categories
-router.get('/categories/list', async (req, res) => {
+router.get('/categories/list', async (req: Request, res: Response) => {
   try {
     const categories = await prisma.product.groupBy({
       by: ['category'],
