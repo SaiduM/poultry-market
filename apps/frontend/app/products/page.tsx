@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, ShoppingCart, Heart, Star, Eye, Zap, Home } from 'lucide-react';
+import { Search, Filter, ShoppingCart, Heart, Star, Eye, Zap, Home, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/context/CartContext';
 
 interface Product {
   id: string;
@@ -14,122 +15,89 @@ interface Product {
   category: string;
   subcategory: string;
   images: string[];
-  rating: number;
-  reviews: number;
-  stock: number;
+  quantity: number;
   unit: string;
+  seller?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
-
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Fresh Farm Eggs',
-    description: 'Organic free-range eggs from healthy hens, collected daily',
-    price: 4.99,
-    category: 'EGGS',
-    subcategory: 'CHICKEN_EGGS',
-    images: ['/images/eggs-1.jpg'],
-    rating: 4.8,
-    reviews: 124,
-    stock: 50,
-    unit: 'DOZEN'
-  },
-  {
-    id: '2',
-    name: 'Brown Laying Hens',
-    description: 'Healthy brown laying hens, 6-12 months old, excellent egg production',
-    price: 25.00,
-    category: 'LIVE_POULTRY',
-    subcategory: 'LAYING_HENS',
-    images: ['/images/hens-1.jpg'],
-    rating: 4.9,
-    reviews: 89,
-    stock: 12,
-    unit: 'EACH'
-  },
-  {
-    id: '3',
-    name: 'White Leghorn Hens',
-    description: 'Pure white leghorn hens, known for high egg production',
-    price: 28.00,
-    category: 'LIVE_POULTRY',
-    subcategory: 'LAYING_HENS',
-    images: ['/images/hens-2.jpg'],
-    rating: 4.7,
-    reviews: 67,
-    stock: 8,
-    unit: 'EACH'
-  },
-  {
-    id: '4',
-    name: 'Jumbo Eggs',
-    description: 'Large jumbo eggs, perfect for baking and cooking',
-    price: 5.99,
-    category: 'EGGS',
-    subcategory: 'CHICKEN_EGGS',
-    images: ['/images/eggs-2.jpg'],
-    rating: 4.6,
-    reviews: 95,
-    stock: 30,
-    unit: 'DOZEN'
-  },
-  {
-    id: '5',
-    name: 'Rhode Island Red Hens',
-    description: 'Dual-purpose hens, great for both eggs and meat',
-    price: 30.00,
-    category: 'LIVE_POULTRY',
-    subcategory: 'LAYING_HENS',
-    images: ['/images/hens-3.jpg'],
-    rating: 4.8,
-    reviews: 73,
-    stock: 15,
-    unit: 'EACH'
-  },
-  {
-    id: '6',
-    name: 'Organic Eggs',
-    description: 'Certified organic eggs from pasture-raised hens',
-    price: 7.99,
-    category: 'EGGS',
-    subcategory: 'CHICKEN_EGGS',
-    images: ['/images/eggs-3.jpg'],
-    rating: 4.9,
-    reviews: 156,
-    stock: 25,
-    unit: 'DOZEN'
-  }
-];
 
 const categories = [
   { id: 'all', name: 'All Products' },
-  { id: 'LIVE_POULTRY', name: 'Live Poultry' },
-  { id: 'EGGS', name: 'Eggs' }
+  { id: 'CHICKEN', name: 'Chicken' },
+  { id: 'HEN', name: 'Hens' },
+  { id: 'EGG', name: 'Eggs' },
+  { id: 'OTHER', name: 'Other' }
 ];
 
 const subcategories = {
-  LIVE_POULTRY: [
-    { id: 'LAYING_HENS', name: 'Laying Hens' },
-    { id: 'BROILERS', name: 'Broilers' },
-    { id: 'CHICKS', name: 'Baby Chicks' }
+  CHICKEN: [
+    { id: 'BROILER', name: 'Broiler' },
+    { id: 'LAYER', name: 'Layer' },
+    { id: 'ROASTER', name: 'Roaster' },
+    { id: 'FRYER', name: 'Fryer' }
   ],
-  EGGS: [
-    { id: 'CHICKEN_EGGS', name: 'Chicken Eggs' },
-    { id: 'DUCK_EGGS', name: 'Duck Eggs' },
-    { id: 'QUAIL_EGGS', name: 'Quail Eggs' }
+  HEN: [
+    { id: 'PULLET', name: 'Pullet' },
+    { id: 'SPENT_HEN', name: 'Spent Hen' }
+  ],
+  EGG: [
+    { id: 'TABLE_EGG', name: 'Table Eggs' },
+    { id: 'HATCHING_EGG', name: 'Hatching Eggs' }
+  ],
+  OTHER: [
+    { id: 'MANURE', name: 'Manure' },
+    { id: 'FEATHERS', name: 'Feathers' },
+    { id: 'EQUIPMENT', name: 'Equipment' }
   ]
 };
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { addToCart, cartCount } = useCart();
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/products`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        
+        const data = await response.json();
+        setProducts(data.products || []);
+        setFilteredProducts(data.products || []);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again later.');
+        // Fallback to empty array
+        setProducts([]);
+        setFilteredProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     let filtered = products;
@@ -159,8 +127,8 @@ export default function ProductsPage() {
           return a.price - b.price;
         case 'price-high':
           return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'name':
         default:
           return a.name.localeCompare(b.name);
@@ -176,9 +144,9 @@ export default function ProductsPage() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(price);
   };
 
@@ -195,18 +163,51 @@ export default function ProductsPage() {
     }
   };
 
-  const handleBuyNow = (product: Product) => {
-    if (loading) return; // Wait until auth state is loaded
-
+  const handleAddToCart = (product: Product) => {
     if (!user) {
-      // Redirect to signup page if not logged in
-      router.push('/auth/signup');
-    } else {
-      // Placeholder for actual checkout logic
-      alert(`Proceeding to checkout for ${product.name}`);
-      // router.push(`/checkout?productId=${product.id}`);
+      router.push('/auth/login');
+      return;
     }
+    
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      unit: product.unit,
+      image: product.images[0] || '/images/placeholder.jpg'
+    });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -233,7 +234,7 @@ export default function ProductsPage() {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Cart (0)
+                Cart ({cartCount})
               </Link>
             </div>
           </div>
@@ -283,7 +284,7 @@ export default function ProductsPage() {
                 <option value="name">Sort by Name</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
+                <option value="newest">Newest</option>
               </select>
             </div>
           </div>
@@ -328,7 +329,7 @@ export default function ProductsPage() {
               <div className="aspect-w-1 aspect-h-1 bg-gray-200">
                 <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-500 text-sm">
-                    {product.category === 'EGGS' ? '🥚' : '🐔'} {product.name}
+                    {product.category === 'EGG' ? '🥚' : '🐔'} {product.name}
                   </span>
                 </div>
               </div>
@@ -347,20 +348,14 @@ export default function ProductsPage() {
                 <p className="mt-2 text-sm text-gray-500">{product.description}</p>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-xl font-bold text-gray-900">{formatPrice(product.price)} / {getUnitLabel(product.unit)}</span>
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 text-yellow-400" />
-                    <span className="ml-1 text-gray-600">{product.rating}</span>
-                    <span className="ml-2 text-gray-400">({product.reviews} reviews)</span>
-                  </div>
                 </div>
                 <div className="mt-6 flex gap-4">
                   <button
-                    onClick={() => handleBuyNow(product)}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400"
-                    disabled={loading}
+                    onClick={() => handleAddToCart(product)}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                   >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Buy Now
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add to Cart
                   </button>
                   <button className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     <Heart className="h-4 w-4" />
