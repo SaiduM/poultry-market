@@ -1,67 +1,51 @@
 # Stage 1: Builder
 FROM node:18-slim AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy root package files and install all dependencies
-COPY package.json package-lock.json ./
-RUN npm install
+# Copy root package files first to leverage Docker cache
+COPY package.json package-lock.json* ./
+# We use --omit=dev here already because we only need production deps to build
+RUN npm install --omit=dev
 
-# Copy monorepo packages and apps
-COPY packages ./packages
-COPY apps ./apps
+# Copy the rest of the monorepo source code
+COPY . .
 
-# Set prisma schema location for generate
-ENV PRISMA_SCHEMA_PATH=./packages/database/prisma/schema.prisma
-
-# Generate Prisma client
-RUN npx prisma generate --schema=$PRISMA_SCHEMA_PATH
+# Generate the Prisma client with the required binary target
+RUN npx prisma generate
 
 # Build the backend application
 RUN npm run build --workspace=@poultry-marketplace/backend
 
-# Prune development dependencies for the final stage
-RUN npm prune --omit=dev
-
-
 # Stage 2: Production
 FROM node:18-slim
 
-# Install OpenSSL, which is required by Prisma
-RUN apt-get update -y && apt-get install -y openssl
+# Prisma requires OpenSSL
+RUN apt-get update && apt-get install -y openssl-dev && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy the root package.json. This is ESSENTIAL for the `npm --workspace` command to work.
-COPY --from=builder /app/package.json ./
-
-# Copy pruned node_modules from builder
+# Copy production dependencies and package files from the builder stage
 COPY --from=builder /app/node_modules ./node_modules
-
-# Copy built backend app from builder
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-
-# Copy the backend's package.json
+COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
 
-# Copy the backend's tsconfig.json and tsconfig.prod.json for path resolution
-COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/
-COPY --from=builder /app/apps/backend/tsconfig.prod.json ./apps/backend/
+# Copy the compiled backend code
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 
-# Copy prisma schema for runtime
+# Copy the Prisma schema and the generated client
 COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/database/prisma/
+COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
 
-# Set the node path to the compiled output directory
-# This allows aliased paths (like @/...) to be resolved at runtime.
-ENV NODE_PATH=./apps/backend/dist
+# Copy tsconfig for path resolution at runtime
+COPY --from=builder /app/apps/backend/tsconfig.prod.json ./apps/backend/tsconfig.prod.json
 
-# Expose the application port
-EXPOSE 5001
+# Set TS_NODE_PROJECT so tsconfig-paths knows which config to use
+ENV TS_NODE_PROJECT=./apps/backend/tsconfig.prod.json
 
-# Run database migrations and then start the server.
-# This ensures the database is always in sync with the application code.
-# We 'cd' into the backend directory so tsconfig-paths can find the tsconfig.json
-# We explicitly set TS_NODE_PROJECT to use our production config.
-CMD ["sh", "-c", "npx prisma migrate deploy && cd apps/backend && export TS_NODE_PROJECT='tsconfig.prod.json' && node -r tsconfig-paths/register dist/index.js"] 
+# Expose the correct port Render expects
+EXPOSE 10000
+
+# The start command is now handled by render.yaml's startCommand
+# This CMD is now a fallback for running the container locally
+CMD [ "node", "-r", "tsconfig-paths/register", "apps/backend/dist/index.js" ] 
