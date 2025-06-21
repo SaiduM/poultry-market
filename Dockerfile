@@ -38,10 +38,10 @@ COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/datab
 COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
 
 # Copy tsconfig for path resolution at runtime
-COPY --from=builder /app/apps/backend/tsconfig.prod.json ./apps/backend/tsconfig.prod.json
+COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/tsconfig.json
 
 # Set TS_NODE_PROJECT so tsconfig-paths knows which config to use
-ENV TS_NODE_PROJECT=./apps/backend/tsconfig.prod.json
+ENV TS_NODE_PROJECT=./apps/backend/tsconfig.json
 
 # Expose the correct port Render expects
 EXPOSE 10000
