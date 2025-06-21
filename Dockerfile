@@ -21,7 +21,7 @@ RUN npm run build --workspace=@poultry-marketplace/backend
 FROM node:18-slim
 
 # Prisma requires OpenSSL
-RUN apt-get update && apt-get install -y openssl-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libssl-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
