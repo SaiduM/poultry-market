@@ -49,5 +49,5 @@ COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/datab
 # Expose the application port
 EXPOSE 5001
 
-# Define the startup command
-CMD [ "npm", "start", "--workspace=@poultry-marketplace/backend" ] 
+# Define the startup command directly, bypassing the npm workspace command which was causing issues.
+CMD [ "node", "apps/backend/dist/index.js" ] 
