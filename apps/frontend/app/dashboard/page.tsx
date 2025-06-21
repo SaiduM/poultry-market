@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Product, Order } from '@poultry-marketplace/shared/types';
+import { Product, Order } from '@poultry-marketplace/shared';
 import { 
   Package, 
   ShoppingCart, 

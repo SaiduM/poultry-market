@@ -6,7 +6,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/context/CartContext';
-import { Product } from '@poultry-marketplace/shared/types';
+import { Product } from '@poultry-marketplace/shared';
+import Image from 'next/image';
+import { StarIcon } from '@heroicons/react/20/solid';
+import { HeartIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 const categories = [
   { id: 'all', name: 'All Products' },

@@ -15,10 +15,6 @@
     "sourceMap": true,
     "removeComments": true,
     "moduleResolution": "node",
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["./*"]
-    },
     "allowSyntheticDefaultImports": true,
     "types": ["node"]
   },

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Product, User } from '@poultry-marketplace/shared/types';
+import { Product, User } from '@poultry-marketplace/shared';
 import { 
   Users, 
   Package, 
