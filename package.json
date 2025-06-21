@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A modern bidding and e-commerce platform for poultry products",
   "private": true,
+  "packageManager": "npm@11.3.0",
   "workspaces": [
     "apps/*",
     "packages/*"
