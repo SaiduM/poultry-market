@@ -1,6 +1,14 @@
 import { Router } from 'express';
+import { authMiddleware, AuthRequest } from '@/middleware/auth';
 
 const router = Router();
+
+// Get current user's profile
+router.get('/me', authMiddleware, (req, res) => {
+  // The user object is attached to the request by the authMiddleware
+  const user = (req as AuthRequest).user;
+  res.json(user);
+});
 
 // Get user profile
 router.get('/profile', (req, res) => {
