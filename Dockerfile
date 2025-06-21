@@ -31,6 +31,9 @@ FROM node:18-slim
 # Set working directory
 WORKDIR /app
 
+# Copy the root package.json. This is ESSENTIAL for the `npm --workspace` command to work.
+COPY --from=builder /app/package.json ./
+
 # Copy pruned node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
 
