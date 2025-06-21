@@ -46,8 +46,9 @@ COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 # Copy the backend's package.json
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/package.json
 
-# Copy the backend's tsconfig.json so tsconfig-paths can resolve aliases. THIS IS THE KEY FIX.
+# Copy the backend's tsconfig.json and tsconfig.prod.json for path resolution
 COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/
+COPY --from=builder /app/apps/backend/tsconfig.prod.json ./apps/backend/
 
 # Copy prisma schema for runtime
 COPY --from=builder /app/packages/database/prisma/schema.prisma ./packages/database/prisma/
@@ -62,4 +63,5 @@ EXPOSE 5001
 # Run database migrations and then start the server.
 # This ensures the database is always in sync with the application code.
 # We 'cd' into the backend directory so tsconfig-paths can find the tsconfig.json
-CMD ["sh", "-c", "npx prisma migrate deploy && cd apps/backend && node -r tsconfig-paths/register dist/index.js"] 
+# We explicitly set TS_NODE_PROJECT to use our production config.
+CMD ["sh", "-c", "npx prisma migrate deploy && cd apps/backend && export TS_NODE_PROJECT='tsconfig.prod.json' && node -r tsconfig-paths/register dist/index.js"] 
