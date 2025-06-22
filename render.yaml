@@ -14,7 +14,7 @@ services:
     # The following settings are crucial for a monorepo
     dockerContext: .
     dockerfilePath: ./Dockerfile
-    startCommand: "npx prisma migrate deploy && node -r tsconfig-paths/register apps/backend/dist/index.js"
+    startCommand: "npm run start:prod --workspace=@poultry-marketplace/backend"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -23,7 +23,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        value: "https://your-frontend-url.vercel.app" # Replace with your frontend URL after deploying it
+        value: "https://poultry-market-frontend.vercel.app"
 
 databases:
   - name: poultry-db
