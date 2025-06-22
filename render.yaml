@@ -14,7 +14,8 @@ services:
     # The following settings are crucial for a monorepo
     dockerContext: .
     dockerfilePath: ./Dockerfile
-    startCommand: "npm run start:prod --workspace=@poultry-marketplace/backend"
+    preDeployCommand: "npx prisma migrate deploy"
+    startCommand: "npm run start --workspace=@poultry-marketplace/backend"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
